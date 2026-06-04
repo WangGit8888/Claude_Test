@@ -1,8 +1,11 @@
 package com.example.bpm.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.bpm.entity.BpmProcess;
 import com.example.bpm.service.BpmProcessService;
+import com.example.common.dto.Condition;
+import com.example.common.dto.RequestDTO;
+import com.example.common.model.ApiResponseBody;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,48 +26,39 @@ public class BpmProcessController {
     private BpmProcessService service;
 
     @GetMapping
-    @Operation(summary = "查询流程列表")
-    public List<BpmProcess> list() {
-        return service.list();
+    @Operation(summary = "分页查询流程")
+    public ApiResponseBody<Page<BpmProcess>> page(RequestDTO requestDTO) {
+        return ApiResponseBody.success(service.page(requestDTO));
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "按ID查询流程")
-    public BpmProcess getById(@PathVariable @Parameter(description = "流程ID") Long id) {
-        return service.getById(id);
+    public ApiResponseBody<BpmProcess> getById(@PathVariable @Parameter(description = "流程ID") Long id) {
+        return ApiResponseBody.success(service.getById(id));
     }
 
     @PostMapping
     @Operation(summary = "新增或修改流程（有id则修改，无id则新增）")
-    public boolean saveOrUpdate(@RequestBody BpmProcess entity) {
-        return service.saveOrUpdate(entity);
+    public ApiResponseBody<Boolean> saveOrUpdate(@RequestBody BpmProcess entity) {
+        return ApiResponseBody.success(service.saveOrUpdate(entity));
     }
 
-    @DeleteMapping("/{id}")
-    @Operation(summary = "删除流程")
-    public boolean delete(@PathVariable @Parameter(description = "流程ID") Long id) {
-        return service.removeById(id);
-    }
-
-    @GetMapping("/search")
-    @Operation(summary = "按流程名称模糊搜索")
-    public List<BpmProcess> search(@RequestParam @Parameter(description = "关键字") String keyword) {
-        QueryWrapper<BpmProcess> qw = new QueryWrapper<>();
-        qw.like("process_name", keyword);
-        qw.orderByDesc("create_date");
-        return service.list(qw);
+    @DeleteMapping
+    @Operation(summary = "批量删除流程")
+    public ApiResponseBody<Boolean> delete(@RequestBody @Parameter(description = "ID列表") List<Long> ids) {
+        return ApiResponseBody.success(service.delete(ids));
     }
 
     @GetMapping("/export")
     @Operation(summary = "导出Excel")
-    public void exportExcel(HttpServletResponse response) throws IOException {
-        service.exportExcel(response);
+    public void exportExcel(HttpServletResponse response,@RequestBody Condition condition) throws IOException {
+        service.exportExcel(response,condition);
     }
 
     @PostMapping("/import")
     @Operation(summary = "导入Excel")
-    public String importExcel(@RequestParam @Parameter(description = "Excel文件") MultipartFile file) throws IOException {
+    public ApiResponseBody<String> importExcel(@RequestParam @Parameter(description = "Excel文件") MultipartFile file) throws IOException {
         int count = service.importExcel(file);
-        return "导入成功，共处理 " + count + " 条记录";
+        return ApiResponseBody.success("导入成功，共处理 " + count + " 条记录");
     }
 }

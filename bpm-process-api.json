@@ -1,0 +1,344 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "流程管理 API",
+    "description": "BpmProcess 流程信息增删改查、导入导出接口",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "本地开发"
+    }
+  ],
+  "tags": [
+    {
+      "name": "流程管理",
+      "description": "流程信息的增删改查接口"
+    }
+  ],
+  "paths": {
+    "/api/bpm/process": {
+      "get": {
+        "tags": ["流程管理"],
+        "summary": "分页查询流程",
+        "operationId": "page",
+        "parameters": [
+          {
+            "name": "pageNum",
+            "in": "query",
+            "required": false,
+            "description": "页码",
+            "schema": { "type": "integer", "default": 1 }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "description": "每页条数",
+            "schema": { "type": "integer", "default": 10 }
+          },
+          {
+            "name": "condition.keyword",
+            "in": "query",
+            "required": false,
+            "description": "关键字筛选",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponseBody" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": { "$ref": "#/components/schemas/PageBpmProcess" }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["流程管理"],
+        "summary": "新增或修改流程（有id则修改，无id则新增）",
+        "operationId": "saveOrUpdate",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/BpmProcess" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponseBody" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": { "type": "boolean" }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["流程管理"],
+        "summary": "批量删除流程",
+        "operationId": "delete",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": { "type": "integer", "format": "int64" },
+                "description": "ID列表",
+                "example": [1, 2, 3]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponseBody" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": { "type": "boolean" }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bpm/process/{id}": {
+      "get": {
+        "tags": ["流程管理"],
+        "summary": "按ID查询流程",
+        "operationId": "getById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "流程ID",
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponseBody" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": { "$ref": "#/components/schemas/BpmProcess" }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bpm/process/export": {
+      "get": {
+        "tags": ["流程管理"],
+        "summary": "导出Excel",
+        "operationId": "exportExcel",
+        "parameters": [
+          {
+            "name": "pageNum",
+            "in": "query",
+            "required": false,
+            "description": "页码（分页导出，不传则导出全部）",
+            "schema": { "type": "integer" }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "description": "每页条数",
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Excel 文件流",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bpm/process/import": {
+      "post": {
+        "tags": ["流程管理"],
+        "summary": "导入Excel",
+        "operationId": "importExcel",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Excel文件"
+                  }
+                },
+                "required": ["file"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponseBody" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": { "type": "string" }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApiResponseBody": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "状态码（200-成功）"
+          },
+          "message": {
+            "type": "string",
+            "description": "提示信息"
+          },
+          "data": {
+            "description": "响应数据"
+          }
+        }
+      },
+      "PageBpmProcess": {
+        "type": "object",
+        "properties": {
+          "records": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/BpmProcess" }
+          },
+          "total": { "type": "integer", "description": "总条数" },
+          "size": { "type": "integer", "description": "每页条数" },
+          "current": { "type": "integer", "description": "当前页" },
+          "pages": { "type": "integer", "description": "总页数" }
+        }
+      },
+      "BpmProcess": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "主键ID（新增时不传或传null，修改时必传）"
+          },
+          "processName": {
+            "type": "string",
+            "description": "流程名称"
+          },
+          "processNo": {
+            "type": "string",
+            "description": "流程编号"
+          },
+          "year": {
+            "type": "string",
+            "description": "年度"
+          },
+          "subProject": {
+            "type": "string",
+            "description": "子工程"
+          },
+          "fileType": {
+            "type": "string",
+            "description": "文件类型"
+          },
+          "submitFileType": {
+            "type": "string",
+            "description": "报送文件类型"
+          },
+          "initiateDate": {
+            "type": "string",
+            "format": "date",
+            "description": "发起日期 (yyyy-MM-dd)"
+          },
+          "initiator": {
+            "type": "string",
+            "description": "发起人"
+          },
+          "currentExecutor": {
+            "type": "string",
+            "description": "当前执行人"
+          },
+          "processStatus": {
+            "type": "string",
+            "description": "流程状态"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,2 +1,3 @@
 导入导出模板
 1、导入导出都使用EasyExcel来实现
+2、导出需要调分页查询的条件构造方法buildLambdaQueryWrapper来实现按条件导出

@@ -23,7 +23,7 @@ public class BpmProcess extends BaseClass {
     @ExcelProperty("年度")
     private String year;
 
-    @ExcelProperty("子工程")
+    @ExcelProperty("")
     private String subProject;
 
     @ExcelProperty("文件类型")
