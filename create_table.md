@@ -5,9 +5,9 @@
     id 主键 BIGINT
     delete_flag 删除标记 0未删除；1已删除 INT
     create_by 创建人 bigint(20)
-    create_date 创建时间 datetime
+    create_time 创建时间 datetime
     update_by 修改人 bigint(20)
-    update_date 修改时间 datetimeINTBIG
+    update_time 修改时间 datetimeINTBIG
 
 
 生成 表名.md 文件
