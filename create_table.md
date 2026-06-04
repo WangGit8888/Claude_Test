@@ -3,7 +3,7 @@
 
 1、以下是所有表的都有的字段(若无特殊声明)
     id 主键 BIGINT
-    delete_flag 删除标记 0未删除；1已删除 INT
+    dele_flag 删除标记 0未删除；1已删除 INT
     create_by 创建人 bigint(20)
     create_time 创建时间 datetime
     update_by 修改人 bigint(20)
