@@ -1,4 +1,4 @@
-FROM openjdk:17-jre-slim
+FROM registry.cn-hangzhou.aliyuncs.com/docker-library/openjdk:17-jre-slim
 
 # 设置时区
 ENV TZ=Asia/Shanghai
