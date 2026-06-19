@@ -6,12 +6,15 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import com.example.common.model.BaseClass;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.springframework.context.annotation.Bean;
+import org.springframework.stereotype.Component;
 
 import java.util.Date;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
 @TableName("bpm_process")
+@Component
 public class BpmProcess extends BaseClass {
 
     @ExcelProperty("流程名称")
@@ -23,7 +26,7 @@ public class BpmProcess extends BaseClass {
     @ExcelProperty("年度")
     private String year;
 
-    @ExcelProperty("")
+    @ExcelProperty("子工程")
     private String subProject;
 
     @ExcelProperty("文件类型")

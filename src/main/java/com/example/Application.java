@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @SpringBootApplication
-@MapperScan({"com.example.mapper", "com.example.zsk.mapper", "com.example.bpm.mapper"})
+@MapperScan({"com.example.mapper", "com.example.zsk.mapper", "com.example.bpm.mapper", "com.example.bpm2.mapper"})
 public class Application {
     public static void main(String[] args) {
         SpringApplication.run(Application.class, args); // 这会让应用保持运行
