@@ -1,4 +1,4 @@
-FROM registry.cn-hangzhou.aliyuncs.com/docker-library/openjdk:17-jre-slim
+FROM eclipse-temurin:17-jre
 
 # 设置时区
 ENV TZ=Asia/Shanghai
