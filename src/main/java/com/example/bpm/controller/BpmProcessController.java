@@ -15,7 +15,7 @@ public class BpmProcessController {
     public String test() {
         Integer i = 200;
         for (int j = 0; j < i; j++) {
-             log.info("发送日志" + i);
+             log.info("发送日志!!!" + j);
         }
         return "sucess";
     }
