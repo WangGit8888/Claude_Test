@@ -4,29 +4,46 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project overview
 
-Desktop Pomodoro Timer (番茄钟) — a Windows GUI app built with Python + Tkinter. Single-file application with dark-themed UI, progress ring, system notifications, and sound alerts.
+`bid-system` (标段每日填报系统) — a Java 17 / Spring Boot 3.3.6 web app built with Maven. It is a mix of a real CRUD application (bid-section daily report, BPM process) and a collection of learning demos for design patterns, JUC concurrency, proxies, and JVM internals. The database is MySQL 8, accessed through MyBatis-Plus 3.5.5.
+
+Note: `pomodoro.py`, `requirements.txt`, `run.bat`, and `__pycache__/` are stale Python artifacts unrelated to the Java app — ignore them.
 
 ## Commands
 
 ```bash
-python pomodoro.py        # launch the timer
-pip install -r requirements.txt  # install dependency (win10toast)
+mvn spring-boot:run            # run the app (listens on port 8881)
+mvn test                       # run tests (only ApplicationTests#contextLoads exists)
+mvn -Dtest=ApplicationTests test   # run a single test class
+mvn clean package              # build executable jar into target/ (used by Dockerfile)
 ```
 
-No test suite or linter is configured.
+No linter is configured. The OpenAPI/Swagger UI is served by springdoc at `/swagger-ui.html`. The app expects MySQL at `localhost:3306` (root/123456) and JSP views under `/WEB-INF/page/`.
 
 ## Architecture
 
-`pomodoro.py` is the entire application (~500 lines). Key internals:
+The source root is `com.example`; `Application.java` is the entrypoint and scans mappers via `@MapperScan("com.example.mapper")`.
 
-- **Config**: stored at `~/.pomodoro_config.json`, loaded/merged with `DEFAULT_CONFIG` on startup. Duration keys are in **seconds** (`work_duration`, `short_break`, `long_break`).
-- **State machine**: three phases — `work` → `short_break` / `long_break` → `work`. Tracked via `self.state` dict (`phase`, `remaining`, `total`, `running`, `completed_pomodoros`, `current_cycle`, `start_time`). `long_break` triggers every `long_break_interval` work sessions.
-- **Timer loop**: `_tick()` runs on `root.after(200, …)`, not a separate thread. Pause/resume recalculates `remaining` from elapsed wall-clock time (`start_time`).
-- **UI**: pure Tkinter, no ttkbootstrap. Canvas-based circular progress ring (`_progress` arc with `extent`). Dark color palette defined at module top (`BG`, `CARD`, `FG`, `COLORS`). Settings window is a `Toplevel` with `Spinbox` inputs and `Checkbutton` toggles.
-- **Notifications**: `win10toast` for desktop toasts (graceful degrade if absent), `winsound` for audio (plays `bell.wav` from project dir, falls back to `Beep`).
-- **Always-on-top**: `root.attributes("-topmost", …)`, controlled by config toggle.
+- **`common/`** — shared infrastructure used across CRUD modules:
+  - `model/ApiResponseBody<T>` — standard `{code, message, data}` response envelope (`success()` / `error()`).
+  - `model/PageResult<T>` — pagination result built by `PageResult.of(...)`.
+  - `model/BaseClass` — intended base entity with audit columns (`id` via snowflake `ASSIGN_ID`, `create_by`/`create_time`/`update_by`/`update_time`, `del_flag` marked `@TableLogic`). Some entities (e.g. `BidSectionDailyReport`) define these fields inline instead of extending it.
+  - `dto/RequestDTO` + `dto/Condition` — fixed pagination+filter query input. `RequestDTO` carries `pageNum`/`pageSize`/`condition`; `Condition` holds filter fields (the `keyword` field is the convention for a fuzzy match).
+  - `util/SnowflakeIdGenerator` — standalone snowflake ID generator (alternative to MyBatis-Plus `ASSIGN_ID`).
+- **`config/MybatisPlusConfig`** — registers the pagination interceptor (MySQL).
+- **`bpm/`** — BPM process module (`controller` + `entity`), the reference for a standard CRUD feature.
+- **`sjms/`** (设计模式 / design patterns) — two worked pattern demos, each in its own sub-package:
+  - `clms/` — **Strategy pattern** for defect handling. `DefectHandler` is the strategy interface; `DefectHandlerFactory` builds a `Map<equipmentType, handler>` by autowiring `List<DefectHandler>`; `DefectServiceV2` is the orchestrator.
+  - `zrlms/` — **Chain of Responsibility** for intern evaluation. `InternEvaluationChainBuilder` autowires `List<InternEvaluationHandler>`, sorts by `@Order`, and links them via `setNext`. `run/InternController` exposes `/api/intern/evaluate`.
+- **`juc/`** — Java concurrency demos (`CompletableFuture*`, `CountDownLatch`, `CyclicBarrier`, `Semaphore`, `Interrupt`, `Volatile`), each a self-contained `main` class.
+- **`proxy/`, `jvm/`, `test01/`** — small demos for JDK/CGLib dynamic proxies, JVM visibility, and GC/thread experiments.
 
-## Platform
+## Code-generation conventions
 
-Windows only. Relies on `win10toast` and `winsound` (both Windows-specific). The `run.bat` launcher assumes Windows `%dp0` path resolution.
+Several root-level `.md` files encode how new CRUD modules should be written. Follow these when adding features:
 
+- **`mybatis_plaus.md`** — standard module layout under one package: `controller`, `mapper`, `entity`, `service`/`serviceImpl` (`dto`/`vo` only when needed). Business logic goes in the `serviceImpl`, never in the controller. Entities use Lombok `@Data`. The service layer must provide: a paginated query whose input is fixed to `com.example.common.dto.RequestDTO` (with a `buildLambdaQueryWrapper` method that constructs filter conditions, initially empty and extended later), a single create/update via MyBatis-Plus `saveOrUpdate`, and a batch delete.
+- **`create_table.md`** — every table gets the common columns: `id` BIGINT PK, `dele_flag` (0/1 delete flag), `create_by`, `create_time`, `update_by`, `update_time` (unless stated otherwise).
+- **`import_export.md`** — import/export must use EasyExcel; export reuses the service's `buildLambdaQueryWrapper` for conditional export.
+- **`java语言规范`** — code must follow the Alibaba Java Coding Guidelines (华山版).
+
+Gotcha: `application.yml` sets the MyBatis-Plus logic-delete field to `deleteFlag`, but `BaseClass` declares it as `delFlag` (`@TableLogic`) and table DDLs use `dele_flag` — these are not currently in agreement; check the target entity/table when relying on logic delete.
