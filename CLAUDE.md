@@ -1,49 +1,206 @@
-# CLAUDE.md
+# Claude Code Configuration for First-cc
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+> AI-powered development workspace configuration
 
-## Project overview
+## Available Skills
 
-`bid-system` (标段每日填报系统) — a Java 17 / Spring Boot 3.3.6 web app built with Maven. It is a mix of a real CRUD application (bid-section daily report, BPM process) and a collection of learning demos for design patterns, JUC concurrency, proxies, and JVM internals. The database is MySQL 8, accessed through MyBatis-Plus 3.5.5.
+Skills are loaded from `.claude/skills/` (symlinked from claude-code-java).
 
-Note: `pomodoro.py`, `requirements.txt`, `run.bat`, and `__pycache__/` are stale Python artifacts unrelated to the Java app — ignore them.
+To use a skill, load it first, then invoke with natural language:
 
-## Commands
+### 1. Git Commit Messages
+**Load**: `view .claude/skills/git-commit/SKILL.md`
 
-```bash
-mvn spring-boot:run            # run the app (listens on port 8881)
-mvn test                       # run tests (only ApplicationTests#contextLoads exists)
-mvn -Dtest=ApplicationTests test   # run a single test class
-mvn clean package              # build executable jar into target/ (used by Dockerfile)
+**Use cases**:
+- "Commit staged changes"
+- "Create commit for bug fix #123"
+- "Generate conventional commit message"
+
+**Example**:
+```
+> view .claude/skills/git-commit/SKILL.md
+> "Commit these changes"
+→ fix(plugin-loader): prevent NPE when directory missing
 ```
 
-No linter is configured. The OpenAPI/Swagger UI is served by springdoc at `/swagger-ui.html`. The app expects MySQL at `localhost:3306` (root/123456) and JSP views under `/WEB-INF/page/`.
+### 2. Test Quality (JUnit 5 + AssertJ)
+**Load**: `view .claude/skills/test-quality/SKILL.md`
 
-## Architecture
+**Use cases**:
+- "Add tests for PluginManager.loadAll()"
+- "Review existing tests in PluginLoaderTest"
+- "Improve test coverage for lifecycle module"
 
-The source root is `com.example`; `Application.java` is the entrypoint and scans mappers via `@MapperScan("com.example.mapper")`.
+**Example**:
+```
+> view .claude/skills/test-quality/SKILL.md
+> "Add unit tests for ExtensionFactory with edge cases"
+→ Generates JUnit 5 tests with AssertJ assertions
+```
 
-- **`common/`** — shared infrastructure used across CRUD modules:
-  - `model/ApiResponseBody<T>` — standard `{code, message, data}` response envelope (`success()` / `error()`).
-  - `model/PageResult<T>` — pagination result built by `PageResult.of(...)`.
-  - `model/BaseClass` — intended base entity with audit columns (`id` via snowflake `ASSIGN_ID`, `create_by`/`create_time`/`update_by`/`update_time`, `del_flag` marked `@TableLogic`). Some entities (e.g. `BidSectionDailyReport`) define these fields inline instead of extending it.
-  - `dto/RequestDTO` + `dto/Condition` — fixed pagination+filter query input. `RequestDTO` carries `pageNum`/`pageSize`/`condition`; `Condition` holds filter fields (the `keyword` field is the convention for a fuzzy match).
-  - `util/SnowflakeIdGenerator` — standalone snowflake ID generator (alternative to MyBatis-Plus `ASSIGN_ID`).
-- **`config/MybatisPlusConfig`** — registers the pagination interceptor (MySQL).
-- **`bpm/`** — BPM process module (`controller` + `entity`), the reference for a standard CRUD feature.
-- **`sjms/`** (设计模式 / design patterns) — two worked pattern demos, each in its own sub-package:
-  - `clms/` — **Strategy pattern** for defect handling. `DefectHandler` is the strategy interface; `DefectHandlerFactory` builds a `Map<equipmentType, handler>` by autowiring `List<DefectHandler>`; `DefectServiceV2` is the orchestrator.
-  - `zrlms/` — **Chain of Responsibility** for intern evaluation. `InternEvaluationChainBuilder` autowires `List<InternEvaluationHandler>`, sorts by `@Order`, and links them via `setNext`. `run/InternController` exposes `/api/intern/evaluate`.
-- **`juc/`** — Java concurrency demos (`CompletableFuture*`, `CountDownLatch`, `CyclicBarrier`, `Semaphore`, `Interrupt`, `Volatile`), each a self-contained `main` class.
-- **`proxy/`, `jvm/`, `test01/`** — small demos for JDK/CGLib dynamic proxies, JVM visibility, and GC/thread experiments.
+### 3. Issue Triage
+**Load**: `view .claude/skills/issue-triage/SKILL.md`
 
-## Code-generation conventions
+**Use cases**:
+- "Triage the last 10 issues"
+- "Check recent bug reports"
+- "Prioritize open feature requests"
 
-Several root-level `.md` files encode how new CRUD modules should be written. Follow these when adding features:
+**Example**:
+```
+> view .claude/skills/issue-triage/SKILL.md
+> "Triage issues from AI, last 15"
+→ Categorizes, labels, suggests responses
+```
 
-- **`mybatis_plaus.md`** — standard module layout under one package: `controller`, `mapper`, `entity`, `service`/`serviceImpl` (`dto`/`vo` only when needed). Business logic goes in the `serviceImpl`, never in the controller. Entities use Lombok `@Data`. The service layer must provide: a paginated query whose input is fixed to `com.example.common.dto.RequestDTO` (with a `buildLambdaQueryWrapper` method that constructs filter conditions, initially empty and extended later), a single create/update via MyBatis-Plus `saveOrUpdate`, and a batch delete.
-- **`create_table.md`** — every table gets the common columns: `id` BIGINT PK, `dele_flag` (0/1 delete flag), `create_by`, `create_time`, `update_by`, `update_time` (unless stated otherwise).
-- **`import_export.md`** — import/export must use EasyExcel; export reuses the service's `buildLambdaQueryWrapper` for conditional export.
-- **`java语言规范`** — code must follow the Alibaba Java Coding Guidelines (华山版).
+## MCP Servers (Optional)
 
-Gotcha: `application.yml` sets the MyBatis-Plus logic-delete field to `deleteFlag`, but `BaseClass` declares it as `delFlag` (`@TableLogic`) and table DDLs use `dele_flag` — these are not currently in agreement; check the target entity/table when relying on logic delete.
+MCP servers enhance capabilities with structured, token-efficient operations:
+
+| Server | Benefits |
+|--------|----------|
+| GitHub MCP | Issue management, PR creation |
+| Filesystem MCP | Structured file tree navigation |
+| Git MCP | Commit history, blame, log parsing |
+
+To configure MCP servers, run from claude-code-java:
+```bash
+./scripts/configure-mcp.sh /path/to/this/project
+```
+
+See [MCP documentation](https://modelcontextprotocol.io/) for details.
+
+## Common Workflows
+
+### Daily Development Flow
+```bash
+# 1. Start session
+claude code .
+
+# 2. Work on feature/fix
+# ... make code changes ...
+
+# 3. Add tests (load test-quality skill)
+> view .claude/skills/test-quality/SKILL.md
+> "Add tests for new functionality in class X"
+
+# 4. Commit (load git-commit skill)
+> view .claude/skills/git-commit/SKILL.md
+> "Commit staged changes"
+
+# 5. Push and create PR
+> "Push changes and create PR for issue #123"
+```
+
+### Weekly Maintenance
+```bash
+# Monday morning: Issue triage
+claude code .
+
+> view .claude/skills/issue-triage/SKILL.md
+> "Triage the last 20 issues, categorize and prioritize"
+
+# Review suggested actions
+> "Apply labels and post responses as suggested"
+```
+
+### Code Review
+```bash
+# Review PR
+> "Review PR #456 focusing on:
+   - Test coverage (use test-quality skill)
+   - Commit message quality (use git-commit skill)
+   - Code patterns and best practices"
+```
+
+## Token Budget Guidelines
+
+To optimize token usage:
+
+1. **Load skills once per session** - Skills stay in context
+2. **Batch operations** - Process multiple issues/tests together
+3. **Use MCP when available** - More efficient than bash commands
+4. **Targeted file reads** - Only read files you need
+
+### Target Token Usage
+
+| Task | Without Skills | With Skills | Savings |
+|------|----------------|-------------|---------|
+| Commit message | ~800 tokens | ~300 tokens | 62% |
+| Add 3 tests | ~2000 tokens | ~800 tokens | 60% |
+| Triage 10 issues | ~5000 tokens | ~2000 tokens | 60% |
+
+## What to Avoid
+
+1. **Don't reload skills repeatedly** - Load once per session
+2. **Don't process issues one-by-one** - Batch them
+3. **Don't over-engineer** - Use skills for appropriate tasks
+4. **Don't ignore skill guidelines** - They're optimized for tokens
+
+## Project-Specific Notes
+
+### Build Commands
+```bash
+# Maven
+mvn clean install
+mvn test
+mvn jacoco:report
+
+# Check test coverage
+open target/site/jacoco/index.html
+```
+
+### Testing Strategy
+- Target: 80%+ coverage on core logic
+- Focus: Business logic, not boilerplate
+- Tools: JUnit 5, AssertJ, Mockito
+
+### Commit Guidelines
+- Follow Conventional Commits
+- Reference issues: "Fixes #123"
+- Keep subject under 50 chars
+
+### Issue Management
+- Label all new issues within 48h
+- Respond to questions within 1 week
+- Close stale (>90 days, no activity) issues
+
+## Resources
+
+- [claude-code-java](https://github.com/decebals/claude-code-java) - Skill repository
+- [Claude Code Docs](https://code.claude.com/docs) - Official documentation
+- [Conventional Commits](https://www.conventionalcommits.org/) - Commit format
+- [AssertJ Docs](https://assertj.github.io/doc/) - Assertion library
+
+## Tips & Tricks
+
+### Quick skill loading
+```bash
+# Add to your shell alias
+alias cc-commit='echo "view .claude/skills/git-commit/SKILL.md"'
+alias cc-test='echo "view .claude/skills/test-quality/SKILL.md"'
+alias cc-triage='echo "view .claude/skills/issue-triage/SKILL.md"'
+```
+
+### Session continuity
+```bash
+# Save context at end of session
+> "Summarize what we worked on today for next session"
+
+# Resume next day
+> "Review yesterday's summary and continue"
+```
+
+### Measure your wins
+```bash
+# Track token usage
+> /token usage
+
+# Compare before/after adopting skills
+# Document savings in team retrospectives
+```
+
+---
+
+**Last updated**: 2026-08-27
+**claude-code-java version**: v0.1

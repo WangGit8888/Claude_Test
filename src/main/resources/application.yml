@@ -11,6 +11,22 @@ spring:
     username: root
     password: 123456
     driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # ========== Redis 配置 ==========
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      password:           # 如果没有密码就留空，或直接注释掉这一行
+      database: 0         # 默认库，范围 0-15
+      timeout: 5000ms     # 连接超时时间
+      lettuce:
+        pool:
+          max-active: 8   # 最大连接数（正数表示无限制）
+          max-idle: 8     # 最大空闲连接数
+          min-idle: 0     # 最小空闲连接数
+          max-wait: -1ms  # 获取连接最大等待时间（-1 表示无限等待）
+
   aop:
     proxy-target-class: false
 
