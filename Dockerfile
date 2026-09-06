@@ -10,10 +10,10 @@ WORKDIR /app
 COPY target/*.jar app.jar
 
 # ✅ 新增：复制 JMX Agent JAR 到镜像
-COPY lib/jmx_prometheus_isolator_javaagent-1.6.0.jar /app/jmx-agent.jar
+#COPY lib/jmx_prometheus_isolator_javaagent-1.6.0.jar /app/jmx-agent.jar
 
 # ✅ 新增：复制 JMX 配置文件
-COPY jmx-config.yaml /app/jmx-config.yaml
+#COPY jmx-config.yaml /app/jmx-config.yaml
 
 # 暴露端口
 EXPOSE 8888
