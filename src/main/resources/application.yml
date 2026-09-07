@@ -32,7 +32,7 @@ spring:
   cloud:
     sentinel:
       transport:
-        dashboard: host.docker.internal:8011  # 你的控制台地址
+        dashboard: 172.31.173.145:8011  # 你的控制台地址
       eager: true                   # 提前初始化，默认是懒加载
 
   aop:
