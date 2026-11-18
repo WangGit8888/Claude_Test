@@ -40,8 +40,8 @@ spring:
     # ========== Nacos 配置（新增） ==========
     nacos:
       config:
-#        server-addr: localhost:8848
-        server-addr: nacos-main:8848
+        server-addr: localhost:8848
+#        server-addr: nacos-main:8848
         file-extension: yaml
         namespace: public
         group: DEFAULT_GROUP
@@ -49,8 +49,8 @@ spring:
         import-check:
           enabled: false   # 关闭 Spring Boot 3.x 的 import 检查
       discovery:
-#        server-addr: localhost:8848
-        server-addr: nacos-main:8848
+        server-addr: localhost:8848
+#        server-addr: nacos-main:8848
         namespace: public
         group: DEFAULT_GROUP
         register-enabled: true
