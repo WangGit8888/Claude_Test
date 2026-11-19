@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package com.example.demo;
+
+import "google/protobuf/timestamp.proto";
+
+option java_package = "com.example.grpc";
+option java_multiple_files = true;
+option go_package = "github.com/example/demo/proto;demo";
+
+enum UserStatus {
+  // proto3 也要求枚举包含 0 值
+  USER_STATUS_UNSPECIFIED = 0;
+  USER_STATUS_ACTIVE = 1;
+  USER_STATUS_INACTIVE = 2;
+}
+
+message UserProfile {
+  string user_id = 1;
+  string username = 2;
+  int32 age = 3;
+  UserStatus status = 4;
+  google.protobuf.Timestamp created_at = 5;
+  repeated string tags = 6;
+
+  message Address {
+    string country = 1;
+    string city = 2;
+  }
+  Address address = 7;
+
+  map<string, string> metadata = 8;
+
+  oneof contact_info {
+    string email = 9;
+    string phone = 10;
+  }
+}
+
+service UserService {
+  rpc GetUser (UserRequest) returns (UserProfile);
+  rpc ListUsers (UserRequest) returns (stream UserProfile);
+}
+
+message UserRequest {
+  string user_id = 1;
+}
